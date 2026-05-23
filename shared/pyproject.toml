@@ -11,6 +11,7 @@ aiomysql = "^0.2.0"
 pydantic = "^2.5.3"
 pydantic-settings = "^2.1.0"
 structlog = "^24.1.0"
+aiokafka = "^0.10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
