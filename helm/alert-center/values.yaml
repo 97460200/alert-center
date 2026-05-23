@@ -1,0 +1,63 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  namespace: alert-center
+
+gateway:
+  replicaCount: 2
+  image:
+    repository: alert-center/gateway
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  service:
+    type: ClusterIP
+    port: 8000
+
+admin:
+  replicaCount: 2
+  image:
+    repository: alert-center/admin
+    tag: "latest"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+processor:
+  replicaCount: 2
+  image:
+    repository: alert-center/processor
+    tag: "latest"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilization: 70
+
+notifier:
+  replicaCount: 2
+  image:
+    repository: alert-center/notifier
+    tag: "latest"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilization: 70
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: alert-center/frontend
+    tag: "latest"
+  ingress:
+    enabled: true
+    host: alert.example.com
+    tls: false

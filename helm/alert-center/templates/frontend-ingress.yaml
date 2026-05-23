@@ -1,0 +1,30 @@
+{{- if .Values.frontend.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "alert-center.fullname" . }}-frontend
+  labels:
+    {{- include "alert-center.labels" . | nindent 4 }}
+  {{- with .Values.frontend.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.frontend.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.frontend.ingress.host }}
+      secretName: {{ .Values.frontend.ingress.host }}-tls
+  {{- end }}
+  rules:
+    - host: {{ .Values.frontend.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "alert-center.fullname" . }}-frontend
+                port:
+                  number: 80
+{{- end }}

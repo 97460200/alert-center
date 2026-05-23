@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: alert-root
+      MYSQL_DATABASE: alert_center
+      MYSQL_USER: alert
+      MYSQL_PASSWORD: alert
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  kafka:
+    image: bitnami/kafka:3.6
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+    ports:
+      - "9092:9092"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+
+  admin:
+    build:
+      context: .
+      dockerfile: services/admin/Dockerfile
+    ports:
+      - "8002:8000"
+    environment:
+      - DATABASE_URL=mysql+aiomysql://alert:alert@mysql:3306/alert_center
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - mysql
+      - kafka
+
+  processor:
+    build:
+      context: .
+      dockerfile: services/processor/Dockerfile
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - kafka
+      - redis
+
+  notifier:
+    build:
+      context: .
+      dockerfile: services/notifier/Dockerfile
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - admin
+
+volumes:
+  mysql_data:

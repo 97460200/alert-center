@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "alert-center.fullname" . }}-processor
+  labels:
+    {{- include "alert-center.labels" . | nindent 4 }}
+    app.kubernetes.io/component: processor
+spec:
+  replicas: {{ .Values.processor.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "alert-center.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: processor
+  template:
+    metadata:
+      labels:
+        {{- include "alert-center.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: processor
+    spec:
+      containers:
+        - name: processor
+          image: "{{ .Values.global.imageRegistry }}{{ .Values.processor.image.repository }}:{{ .Values.processor.image.tag }}"
+          imagePullPolicy: {{ .Values.processor.image.pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "{{ .Release.Name }}-kafka:9092"
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis:6379/0"
+          resources:
+            {{- toYaml .Values.processor.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5

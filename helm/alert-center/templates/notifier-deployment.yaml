@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "alert-center.fullname" . }}-notifier
+  labels:
+    {{- include "alert-center.labels" . | nindent 4 }}
+    app.kubernetes.io/component: notifier
+spec:
+  replicas: {{ .Values.notifier.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "alert-center.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: notifier
+  template:
+    metadata:
+      labels:
+        {{- include "alert-center.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: notifier
+    spec:
+      containers:
+        - name: notifier
+          image: "{{ .Values.global.imageRegistry }}{{ .Values.notifier.image.repository }}:{{ .Values.notifier.image.tag }}"
+          imagePullPolicy: {{ .Values.notifier.image.pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "{{ .Release.Name }}-kafka:9092"
+          resources:
+            {{- toYaml .Values.notifier.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5

@@ -1,0 +1,11 @@
+global:
+  imageRegistry: "registry.example.com"
+  imagePullSecrets:
+    - name: registry-secret
+
+frontend:
+  ingress:
+    enabled: true
+    host: alert.example.com
+    tls: true
+    certManager: true

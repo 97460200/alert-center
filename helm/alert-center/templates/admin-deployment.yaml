@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "alert-center.fullname" . }}-admin
+  labels:
+    {{- include "alert-center.labels" . | nindent 4 }}
+    app.kubernetes.io/component: admin
+spec:
+  replicas: {{ .Values.admin.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "alert-center.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: admin
+  template:
+    metadata:
+      labels:
+        {{- include "alert-center.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: admin
+    spec:
+      containers:
+        - name: admin
+          image: "{{ .Values.global.imageRegistry }}{{ .Values.admin.image.repository }}:{{ .Values.admin.image.tag }}"
+          imagePullPolicy: {{ .Values.admin.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "mysql+aiomysql://alert:alert@{{ .Release.Name }}-mysql:3306/alert_center"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "{{ .Release.Name }}-kafka:9092"
+          resources:
+            {{- toYaml .Values.admin.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
