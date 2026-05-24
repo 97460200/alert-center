@@ -91,28 +91,32 @@ jobs:
       - name: 构建网关服务镜像
         uses: docker/build-push-action@v5
         with:
-          context: ./services/gateway
+          context: .
+          file: ./services/gateway/Dockerfile
           push: false
           tags: alert-center/gateway:${{ github.sha }}
       
       - name: 构建处理服务镜像
         uses: docker/build-push-action@v5
         with:
-          context: ./services/processor
+          context: .
+          file: ./services/processor/Dockerfile
           push: false
           tags: alert-center/processor:${{ github.sha }}
       
       - name: 构建通知服务镜像
         uses: docker/build-push-action@v5
         with:
-          context: ./services/notifier
+          context: .
+          file: ./services/notifier/Dockerfile
           push: false
           tags: alert-center/notifier:${{ github.sha }}
       
       - name: 构建管理服务镜像
         uses: docker/build-push-action@v5
         with:
-          context: ./services/admin
+          context: .
+          file: ./services/admin/Dockerfile
           push: false
           tags: alert-center/admin:${{ github.sha }}
       
