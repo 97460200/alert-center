@@ -1,0 +1,53 @@
+name: 同步依赖镜像到阿里云
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 0'  # 每周日凌晨2点执行
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 登录阿里云 ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ALI_REGISTRY }}
+          username: ${{ secrets.ALI_USER }}
+          password: ${{ secrets.ALI_PASSWORD }}
+
+      - name: 同步 MySQL
+        run: |
+          docker pull mysql:8.0
+          docker tag mysql:8.0 ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/mysql:8.0
+          docker push ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/mysql:8.0
+
+      - name: 同步 Redis
+        run: |
+          docker pull redis:7-alpine
+          docker tag redis:7-alpine ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/redis:7-alpine
+          docker push ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/redis:7-alpine
+
+      - name: 同步 Kafka
+        run: |
+          docker pull bitnami/kafka:3.6
+          docker tag bitnami/kafka:3.6 ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/kafka:3.6
+          docker push ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/kafka:3.6
+
+      - name: 同步 Python 基础镜像
+        run: |
+          docker pull python:3.10-slim
+          docker tag python:3.10-slim ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/python:3.10-slim
+          docker push ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/python:3.10-slim
+
+      - name: 同步 Node 基础镜像
+        run: |
+          docker pull node:18-alpine
+          docker tag node:18-alpine ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/node:18-alpine
+          docker push ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/node:18-alpine
+
+      - name: 同步 Nginx
+        run: |
+          docker pull nginx:alpine
+          docker tag nginx:alpine ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/nginx:alpine
+          docker push ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/nginx:alpine
