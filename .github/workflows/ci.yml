@@ -23,12 +23,8 @@ jobs:
       
       - name: 安装依赖
         run: |
-          pip install ruff pytest pytest-asyncio
-          pip install -e ./shared
-          pip install -e ./services/gateway
-          pip install -e ./services/processor
-          pip install -e ./services/notifier
-          pip install -e ./services/admin
+          pip install ruff
+          pip install ./shared
       
       - name: Ruff 检查
         run: ruff check . --ignore E501,I001,UP035,UP007,FA100,TC001,TC002,TC003 || true
@@ -52,11 +48,8 @@ jobs:
       - name: 安装依赖
         run: |
           pip install pytest pytest-asyncio aiosqlite redis httpx
-          pip install -e ./shared
-          pip install -e ./services/gateway
-          pip install -e ./services/processor
-          pip install -e ./services/notifier
-          pip install -e ./services/admin
+          pip install ./shared
+          pip install fastapi uvicorn pydantic-settings structlog aiokafka aiomysql pymysql
       
       - name: 运行测试
         run: |
