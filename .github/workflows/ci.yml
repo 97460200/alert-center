@@ -90,10 +90,16 @@ jobs:
       
       - name: 调试 Secrets
         run: |
-          echo "ALI_REGISTRY: ${{ secrets.ALI_REGISTRY }}"
-          echo "ALI_USER: ${{ secrets.ALI_USER }}"
-          echo "ALI_PASSWORD length: $(echo -n '${{ secrets.ALI_PASSWORD }}' | wc -c)"
-          echo "ALI_NAMESPACE: ${{ secrets.ALI_NAMESPACE }}"
+          echo "=== 调试 Secrets 值 ==="
+          echo "ALI_REGISTRY: '${{ secrets.ALI_REGISTRY }}'"
+          echo "ALI_USER: '${{ secrets.ALI_USER }}'"
+          echo "ALI_PASSWORD 长度: $(echo -n '${{ secrets.ALI_PASSWORD }}' | wc -c)"
+          echo "ALI_NAMESPACE: '${{ secrets.ALI_NAMESPACE }}'"
+          echo "=== 检查 secrets 是否为空 ==="
+          if [ -z "${{ secrets.ALI_REGISTRY }}" ]; then echo "ALI_REGISTRY 为空!"; fi
+          if [ -z "${{ secrets.ALI_USER }}" ]; then echo "ALI_USER 为空!"; fi
+          if [ -z "${{ secrets.ALI_PASSWORD }}" ]; then echo "ALI_PASSWORD 为空!"; fi
+          if [ -z "${{ secrets.ALI_NAMESPACE }}" ]; then echo "ALI_NAMESPACE 为空!"; fi
       
       - name: 登录阿里云 ACR
         uses: docker/login-action@v3
