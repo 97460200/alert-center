@@ -15,20 +15,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: 安装 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      
+
       - name: 安装依赖
         run: |
           pip install ruff
           pip install ./shared
-      
+
       - name: Ruff 检查
         run: ruff check . --ignore E501,I001,UP035,UP007,FA100,TC001,TC002,TC003 || true
-      
+
       - name: Python 编译检查
         run: |
           python -m compileall ./shared ./services ./migrations
@@ -39,18 +39,18 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: 安装 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      
+
       - name: 安装依赖
         run: |
           pip install pytest pytest-asyncio aiosqlite redis httpx
           pip install ./shared
           pip install fastapi uvicorn pydantic-settings structlog aiokafka aiomysql pymysql
-      
+
       - name: 运行测试
         run: |
           pytest ./shared/tests -v --tb=short
@@ -63,16 +63,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: 安装 Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - name: 安装依赖
         working-directory: frontend
         run: npm install
-      
+
       - name: 构建生产版本
         working-directory: frontend
         run: npx vite build
@@ -84,30 +84,17 @@ jobs:
     if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: 设置 Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
-      - name: 调试 Secrets
-        run: |
-          echo "=== 调试 Secrets 值 ==="
-          echo "ALI_REGISTRY: '${{ secrets.ALI_REGISTRY }}'"
-          echo "ALI_USER: '${{ secrets.ALI_USER }}'"
-          echo "ALI_PASSWORD 长度: $(echo -n '${{ secrets.ALI_PASSWORD }}' | wc -c)"
-          echo "ALI_NAMESPACE: '${{ secrets.ALI_NAMESPACE }}'"
-          echo "=== 检查 secrets 是否为空 ==="
-          if [ -z "${{ secrets.ALI_REGISTRY }}" ]; then echo "ALI_REGISTRY 为空!"; fi
-          if [ -z "${{ secrets.ALI_USER }}" ]; then echo "ALI_USER 为空!"; fi
-          if [ -z "${{ secrets.ALI_PASSWORD }}" ]; then echo "ALI_PASSWORD 为空!"; fi
-          if [ -z "${{ secrets.ALI_NAMESPACE }}" ]; then echo "ALI_NAMESPACE 为空!"; fi
-      
+
       - name: 登录阿里云 ACR
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ALI_REGISTRY }}
           username: ${{ secrets.ALI_USER }}
           password: ${{ secrets.ALI_PASSWORD }}
-      
+
       - name: 构建并推送网关镜像
         uses: docker/build-push-action@v5
         with:
@@ -117,7 +104,7 @@ jobs:
           tags: |
             ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/alert-gateway:${{ github.sha }}
             ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/alert-gateway:latest
-      
+
       - name: 构建并推送处理服务镜像
         uses: docker/build-push-action@v5
         with:
@@ -127,7 +114,7 @@ jobs:
           tags: |
             ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/alert-processor:${{ github.sha }}
             ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/alert-processor:latest
-      
+
       - name: 构建并推送通知服务镜像
         uses: docker/build-push-action@v5
         with:
@@ -137,7 +124,7 @@ jobs:
           tags: |
             ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/alert-notifier:${{ github.sha }}
             ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/alert-notifier:latest
-      
+
       - name: 构建并推送管理服务镜像
         uses: docker/build-push-action@v5
         with:
@@ -147,7 +134,7 @@ jobs:
           tags: |
             ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/alert-admin:${{ github.sha }}
             ${{ secrets.ALI_REGISTRY }}/${{ secrets.ALI_NAMESPACE }}/alert-admin:latest
-      
+
       - name: 构建并推送前端镜像
         uses: docker/build-push-action@v5
         with:
