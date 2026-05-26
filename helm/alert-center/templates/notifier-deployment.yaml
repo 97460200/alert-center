@@ -19,11 +19,10 @@ spec:
     spec:
       containers:
         - name: notifier
-          image: "{{ .Values.global.imageRegistry }}{{ .Values.notifier.image.repository }}:{{ .Values.notifier.image.tag }}"
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.notifier.image.repository }}:{{ .Values.notifier.image.tag }}"
           imagePullPolicy: {{ .Values.notifier.image.pullPolicy | default "IfNotPresent" }}
           env:
-            - name: KAFKA_BOOTSTRAP_SERVERS
-              value: "{{ .Release.Name }}-kafka:9092"
+            {{- toYaml .Values.notifier.env | nindent 12 }}
           resources:
             {{- toYaml .Values.notifier.resources | nindent 12 }}
           livenessProbe:

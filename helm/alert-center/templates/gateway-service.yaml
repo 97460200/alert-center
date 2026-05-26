@@ -9,7 +9,7 @@ spec:
   type: {{ .Values.gateway.service.type }}
   ports:
     - port: {{ .Values.gateway.service.port }}
-      targetPort: 8000
+      targetPort: 8001
       protocol: TCP
   selector:
     {{- include "alert-center.selectorLabels" . | nindent 4 }}

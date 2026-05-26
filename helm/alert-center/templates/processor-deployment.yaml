@@ -19,13 +19,10 @@ spec:
     spec:
       containers:
         - name: processor
-          image: "{{ .Values.global.imageRegistry }}{{ .Values.processor.image.repository }}:{{ .Values.processor.image.tag }}"
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.processor.image.repository }}:{{ .Values.processor.image.tag }}"
           imagePullPolicy: {{ .Values.processor.image.pullPolicy | default "IfNotPresent" }}
           env:
-            - name: KAFKA_BOOTSTRAP_SERVERS
-              value: "{{ .Release.Name }}-kafka:9092"
-            - name: REDIS_URL
-              value: "redis://{{ .Release.Name }}-redis:6379/0"
+            {{- toYaml .Values.processor.env | nindent 12 }}
           resources:
             {{- toYaml .Values.processor.resources | nindent 12 }}
           livenessProbe:
