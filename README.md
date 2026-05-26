@@ -203,53 +203,134 @@ curl -X POST http://localhost:8002/api/v1/routes \
 
 ## 📦 部署指南
 
-### Kubernetes 部署 (推荐)
-
-使用 Helm Chart 部署：
+### 方式一：Docker Compose（快速体验）
 
 ```bash
-# 添加仓库
-helm repo add alert-center ./helm/alert-center
-
-# 部署到开发环境
-helm install alert-center ./helm/alert-center \
-  -f ./helm/alert-center/values-dev.yaml \
-  -n monitoring --create-namespace
-
-# 部署到生产环境
-helm install alert-center ./helm/alert-center \
-  -f ./helm/alert-center/values-prod.yaml \
-  -n monitoring
+git clone https://github.com/97460200/alert-center.git
+cd alert-center
+docker-compose up -d
 ```
 
-### 生产环境配置
+访问地址：
+- 前端界面: http://localhost
+- Admin API: http://localhost:8002
+- Gateway API: http://localhost:8001
 
-生产环境 `values-prod.yaml` 配置要点：
+### 方式二：Kubernetes + Helm（生产推荐）
+
+#### 前置要求
+
+- Kubernetes 集群 (1.24+)
+- Helm 3.x
+- kubectl 已配置
+
+#### 快速部署
+
+```bash
+git clone https://github.com/97460200/alert-center.git
+cd alert-center
+
+# 运行部署脚本（自动安装 MySQL/Redis/Kafka + 应用服务）
+chmod +x deploy-k8s.sh
+./deploy-k8s.sh
+```
+
+#### 手动部署
+
+```bash
+# 1. 创建命名空间
+kubectl create namespace alert-center
+
+# 2. 添加 Helm 仓库
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+# 3. 安装基础设施
+helm install mysql bitnami/mysql -n alert-center \
+  --set auth.rootPassword=alertcenter123 \
+  --set auth.database=alert_center \
+  --set auth.username=alert \
+  --set auth.password=alert123 \
+  --wait --timeout 300s
+
+helm install redis bitnami/redis -n alert-center \
+  --set auth.enabled=false \
+  --wait --timeout 300s
+
+helm install kafka bitnami/kafka -n alert-center \
+  --set auth.clientProtocol=plaintext \
+  --set persistence.enabled=true \
+  --wait --timeout 300s
+
+# 4. 安装 Alert Center 应用
+helm install alert-center ./helm/alert-center \
+  -n alert-center \
+  -f ./helm/alert-center/values-prod.yaml \
+  --wait --timeout 600s
+```
+
+#### 验证部署
+
+```bash
+# 查看 Pod 状态
+kubectl get pods -n alert-center
+
+# 查看服务
+kubectl get svc -n alert-center
+
+# 查看 Ingress
+kubectl get ingress -n alert-center
+```
+
+#### 访问服务
+
+```bash
+# 端口转发（测试用）
+kubectl port-forward svc/alert-center-gateway 8001:8001 -n alert-center
+kubectl port-forward svc/alert-center-admin 8002:8002 -n alert-center
+kubectl port-forward svc/alert-center-frontend 8080:80 -n alert-center
+```
+
+#### 生产环境配置
+
+修改 `helm/alert-center/values-prod.yaml`：
 
 ```yaml
-# 镜像仓库
-image:
-  registry: your-registry.com
-  repository: alert-center
+# 镜像仓库（已配置阿里云 ACR）
+global:
+  imageRegistry: "registry.cn-hangzhou.aliyuncs.com"
 
-# 副本数
-gateway:
-  replicas: 3
-processor:
-  replicas: 3
-  hpa:
+# Ingress 域名
+frontend:
+  ingress:
     enabled: true
-    minReplicas: 2
-    maxReplicas: 10
-
-# Ingress
-ingress:
-  enabled: true
-  tls:
-    - secretName: alert-center-tls
-      hosts:
-        - alert.your-domain.com
+    host: alert.your-domain.com
+    tls: true
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt
 ```
+
+更新配置：
+
+```bash
+helm upgrade alert-center ./helm/alert-center \
+  -n alert-center \
+  -f ./helm/alert-center/values-prod.yaml
+```
+
+#### 部署组件一览
+
+| 组件 | 副本数 | 资源限制 | 自动扩缩容 |
+|------|--------|----------|-----------|
+| Gateway | 2 | 1CPU/1GB | - |
+| Processor | 3 | 1CPU/1GB | ✅ 2~10 |
+| Notifier | 2 | 0.5CPU/512MB | ✅ 2~10 |
+| Admin | 2 | 0.5CPU/512MB | - |
+| Frontend | 2 | 0.2CPU/256MB | - |
+| MySQL | 1 | 10GB 存储 | - |
+| Redis | 1 | 5GB 存储 | - |
+| Kafka | 1 | 10GB 存储 | - |
 
 ## 📖 API 文档
 
